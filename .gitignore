@@ -1,0 +1,62 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Testing
+/coverage
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+
+# Local Environment Variables
+.env*.local
+!.env.example
+
+# Prisma
+# Ignore all files in prisma/migrations except for migration_lock.toml
+# This is to prevent conflicts when multiple developers are working on migrations
+# prisma/migrations/*
+# !prisma/migrations/migration_lock.toml
+# prisma/dev.db
+# prisma/dev.db-journal
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Output of 'npm run genkit:dev'
+.genkit/log.json
+.genkit/trace.json
+.genkit/cache.json
+
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json

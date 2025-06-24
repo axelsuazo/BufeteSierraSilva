@@ -1,0 +1,146 @@
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL=${{ MySQL.MYSQL_URL }}")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String // En una implementación real, esto debería estar hasheado
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ClienteBufete {
+  id                 String                    @id @default(cuid())
+  nombres            String
+  apellidos          String
+  correoElectronico  String                    @unique
+  telefono           String?
+  dni                String?                   @unique
+  lugarTrabajo       String?
+  tipoCaso           String // Ej: Civil, Penal, Laboral, etc.
+  estado             String                    @default("Consulta") // Ej: Consulta, Activo, Pendiente, Finalizado, Archivado
+  fechaRegistro      DateTime                  @default(now())
+  fechaUltimaActualizacion DateTime            @updatedAt
+  bitacoras          BitacoraClienteBufete[]
+}
+
+model BitacoraClienteBufete {
+  id              String         @id @default(cuid())
+  cliente         ClienteBufete  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  clienteId       String
+  fechaEntrada    DateTime       @default(now())
+  descripcion     String         @db.Text
+  tipoActuacion   String?        // Ej: Llamada, Reunión, Documento, etc.
+}
+
+model MensajeContacto {
+  id                String   @id @default(cuid())
+  nombre            String
+  correoElectronico String
+  mensaje           String   @db.Text
+  fechaEnvio        DateTime @default(now())
+  leido             Boolean  @default(false)
+}
+
+// Modelo para Citas (funcionalidad desactivada por ahora)
+// model Cita {
+//   id          String    @id @default(cuid())
+//   fechaHora   DateTime
+//   clienteId   String?   // Podría ser un ID de ClienteBufete o ClientePrestamo, o un sistema unificado de 'Contactos'
+//   // cliente     ClienteBufete? @relation(fields: [clienteId], references: [id]) // Ejemplo si es de ClienteBufete
+//   tipoServicio String // Ej: Consulta Legal, Seguimiento Préstamo
+//   notas       String?   @db.Text
+//   confirmada  Boolean   @default(false)
+//   creadaEn    DateTime  @default(now())
+// }
+
+model ClientePrestamo {
+  id                 String              @id @default(cuid())
+  nombres            String
+  apellidos          String
+  dni                String              @unique
+  telefono           String
+  correoElectronico  String              @unique
+  lugarTrabajo       String
+  direccionTrabajo   String?
+  direccionCasa      String
+  rtn                String?             @unique
+  fechaRegistro      DateTime            @default(now())
+  fechaUltimaActualizacion DateTime      @updatedAt
+  solicitudes        SolicitudPrestamo[]
+}
+
+model SolicitudPrestamo {
+  id                       String        @id @default(cuid())
+  cliente                  ClientePrestamo @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  clienteId                String
+  montoSolicitado          Decimal       @db.Decimal(10, 2)
+  montoAprobado            Decimal?      @db.Decimal(10, 2)
+  tipoGarantia             TipoGarantia
+  descripcionGarantia      String?       @db.Text
+  fechaSolicitud           DateTime
+  fechaAprobacion          DateTime?
+  fechaDesembolso          DateTime?
+  estado                   EstadoSolicitud @default(PENDIENTE_APROBACION)
+  notasDePago              String?       @db.Text // Notas generales sobre el plan de pagos o condiciones
+  plazoMeses               Int?          // Plazo del préstamo en meses
+  tasaInteresAnual         Decimal?      @db.Decimal(5, 2) // Tasa de interés anual, ej. 15.50%
+  fechaUltimaActualizacion DateTime      @updatedAt
+  documentos               Documento[]
+  pagos                    PagoPrestamo[]
+}
+
+enum TipoGarantia {
+  HIPOTECARIA
+  PRENDARIA
+  FIDUCIARIA
+  AVAL_BANCARIO
+  OTRO
+}
+
+enum EstadoSolicitud {
+  PENDIENTE_APROBACION
+  APROBADO
+  RECHAZADO
+  DESEMBOLSADO
+  EN_PAGO
+  PAGADO_COMPLETAMENTE
+  INCUMPLIMIENTO
+  CANCELADO // Solicitud cancelada por el cliente o la empresa antes de aprobación/desembolso
+}
+
+model Documento {
+  id                   String            @id @default(cuid())
+  solicitudPrestamo    SolicitudPrestamo @relation(fields: [solicitudPrestamoId], references: [id], onDelete: Cascade)
+  solicitudPrestamoId  String
+  nombreDocumento      String
+  tipoDocumento        String            // Ej: 'application/pdf', 'image/jpeg'
+  urlDocumento         String?           @db.Text // URL pública de descarga
+  storagePath          String?           @db.Text // Ruta interna en Firebase Storage
+  tamanoBytes          Int?
+  fechaSubida          DateTime          @default(now())
+  descripcion          String?           @db.Text
+}
+
+model PagoPrestamo {
+  id                   String            @id @default(cuid())
+  solicitudPrestamo    SolicitudPrestamo @relation(fields: [solicitudPrestamoId], references: [id], onDelete: Cascade)
+  solicitudPrestamoId  String
+  fechaPago            DateTime
+  montoPagado          Decimal           @db.Decimal(10, 2)
+  metodoPago           String?           // Ej: Transferencia, Efectivo, Cheque
+  referenciaPago       String?           // Ej: Número de transacción, número de cheque
+  notas                String?           @db.Text
+  fechaRegistro        DateTime          @default(now())
+}
